@@ -8,6 +8,13 @@ class GccArmEmbedded < Formula
 
   onoe 'Must build with --env=std' unless build.include?('env=std')
 
+  depends_on 'cloog018'
+  depends_on 'expat'    # Want 2.0.1, but core has 2.1.0
+  depends_on 'libelf'
+  depends_on 'libmpc08'
+  depends_on 'mpfr2'
+  depends_on 'zlib'     # Want 1.2.5, but core has 1.5
+
   def install
     inreplace 'build-common.sh', '--with-host-libstdcxx=-static-libgcc -Wl,-lstdc++', '--with-host-libstdcxx=-lstdc++'
     inreplace 'build-common.sh', 'tar cf', 'tar -cf'
@@ -34,10 +41,10 @@ class GccArmEmbedded < Formula
     inreplace 'build-toolchain.sh', /^echo Task \[V-1\].*?popd/m, ''
 
     cd 'src' do
+      system 'rm build-manual.tar.bz2 cloog* expat* gmp* installation.tar.bz2 isl* libelf* mpc* mpfr* zlib*'
       system "find . -name '*.tar.*' | xargs -I% tar -xf %"
-      system 'cd zlib-1.2.5 && patch -p1 < ../zlib-1.2.5.patch'
     end
-    system './build-prerequisites.sh'
+
     system './build-toolchain.sh --skip_manual'
   end
 
