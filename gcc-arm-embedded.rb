@@ -13,16 +13,49 @@ class GccArmEmbedded < Formula
   depends_on 'libelf'
   depends_on 'libmpc08'
   depends_on 'mpfr2'
-  depends_on 'zlib'     # Want 1.2.5, but core has 1.5
 
   def install
     inreplace 'build-common.sh', '--with-host-libstdcxx=-static-libgcc -Wl,-lstdc++', '--with-host-libstdcxx=-lstdc++'
+    inreplace 'build-common.sh', 'INSTALLDIR_NATIVE=$ROOT/install-native', "INSTALLDIR_NATIVE=#{prefix}"
+    inreplace 'build-common.sh', 'INSTALLDIR_NATIVE_DOC=$ROOT/install-native/share/doc/gcc-arm-none-eabi', "INSTALLDIR_NATIVE_DOC=#{doc}"
     inreplace 'build-common.sh', 'tar cf', 'tar -cf'
     inreplace 'build-common.sh', 'tar cjfh', 'tar -cjfh'
     inreplace 'build-common.sh', 'tar xf', 'tar -xf'
     inreplace 'build-common.sh', 'TAR=gnutar', 'TAR=tar'
 
-    # GCC does not compile cleanly under clang
+    inreplace 'build-toolchain.sh', 'rm -rf $INSTALLDIR_NATIVE && mkdir -p $INSTALLDIR_NATIVE', ''
+
+    inreplace 'build-toolchain.sh', 'prepend_path PATH $INSTALLDIR_NATIVE/bin', "prepend_path PATH #{prefix}/bin"
+    inreplace 'build-toolchain.sh', '--prefix=$INSTALLDIR_NATIVE', "--prefix=#{prefix}"
+    inreplace 'build-toolchain.sh', '--libexecdir=$INSTALLDIR_NATIVE/lib', "--libexecdir=#{libexec}"
+    inreplace 'build-toolchain.sh', '--infodir=$INSTALLDIR_NATIVE_DOC/info', "--infodir=#{info}"
+    inreplace 'build-toolchain.sh', '--mandir=$INSTALLDIR_NATIVE_DOC/man', "--mandir=#{man}"
+    inreplace 'build-toolchain.sh', '--htmldir=$INSTALLDIR_NATIVE_DOC/html', "--htmldir=#{doc}/html"
+    inreplace 'build-toolchain.sh', '--pdfdir=$INSTALLDIR_NATIVE_DOC/pdf', "--pdfdir=#{doc}/pdf"
+    inreplace 'build-toolchain.sh', '--with-sysroot=$INSTALLDIR_NATIVE/arm-none-eabi', "--with-sysroot=#{prefix}/arm-none-eabi"
+
+    inreplace 'build-toolchain.sh', 'rmdir include', ''
+    inreplace 'build-toolchain.sh', 'ln -s . $INSTALLDIR_NATIVE/arm-none-eabi/usr', "ln -s . #{prefix}/arm-none-eabi/usr"
+    inreplace 'build-toolchain.sh', 'plugin_dir=$($INSTALLDIR_NATIVE/bin/arm-none-eabi-gcc -print-file-name=plugin)', "plugin_dir=$(#{bin}/arm-none-eabi-gcc -print-file-name=plugin)"
+
+    # Find the Formulas for the dependencies that GCC needs paths to
+    #  These are all keg-only, so they're not linked into HOMEBREW_PREFIX, which
+    #  makes them hard for configure to find on its own.
+    rdeps = recursive_dependencies
+    gmp, mpc, mpfr, isl, cloog, libelf = ['gmp', 'libmpc', 'mpfr', 'isl', 'cloog', 'libelf'].map do |d|
+      rdeps.find {|dep| dep.name =~ /^#{d}/ }.to_formula
+    end
+
+    inreplace 'build-toolchain.sh', /--with-gmp=.*/, "--with-gmp=#{gmp.prefix}"
+    inreplace 'build-toolchain.sh', /--with-mpfr=.*/, "--with-mpfr=#{mpfr.prefix}"
+    inreplace 'build-toolchain.sh', /--with-mpc=.*/, "--with-mpc=#{mpc.prefix}"
+    inreplace 'build-toolchain.sh', /--with-isl=.*/, "--with-isl=#{isl.prefix}"
+    inreplace 'build-toolchain.sh', /--with-cloog=.*/, "--with-cloog=#{cloog.prefix}"
+    inreplace 'build-toolchain.sh', /--with-libelf=.*"/, "--with-libelf=#{libelf.prefix}\""
+
+    inreplace 'build-toolchain.sh', '$BUILDDIR_NATIVE/host-libs/usr', "#{HOMEBREW_PREFIX}"
+
+    # binutils does not compile cleanly under clang
     inreplace 'build-toolchain.sh', '$SRCDIR/$BINUTILS/configure', '$SRCDIR/$BINUTILS/configure --disable-werror'
 
     # Task III-7 doesn't respect --skip_manual, so delete it until it's fixed
