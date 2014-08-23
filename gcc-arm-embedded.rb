@@ -2,9 +2,9 @@ require "formula"
 
 class GccArmEmbedded < Formula
   homepage 'https://launchpad.net/gcc-arm-embedded'
-  version '4_8-2013q4-20131204'
-  url 'https://launchpad.net/gcc-arm-embedded/4.8/4.8-2014-q1-update/+download/gcc-arm-none-eabi-4_8-2014q1-20140314-src.tar.bz2'
-  sha1 '121dbfbd6a4223c33508e2a6291550369bd5c3aa'
+  version '4_8-2014q2-20140609'
+  url 'https://launchpad.net/gcc-arm-embedded/4.8/4.8-2014-q2-update/+download/gcc-arm-none-eabi-4_8-2014q2-20140609-src.tar.bz2'
+  sha1 '152e80087d59f13aae5e8e6afa37a8aad5fca302'
 
   onoe 'Must build with --env=std' unless build.include?('env=std')
 
@@ -57,9 +57,6 @@ class GccArmEmbedded < Formula
 
     # binutils does not compile cleanly under clang
     inreplace 'build-toolchain.sh', '$SRCDIR/$BINUTILS/configure', '$SRCDIR/$BINUTILS/configure --disable-werror'
-
-    # Task III-7 doesn't respect --skip_manual, so delete it until it's fixed
-    inreplace 'build-toolchain.sh', /^if \[ "x\$is_ppa_release" != "xyes" \]; then\necho TASK \[III-7\].*?fi/m, ''
 
     # Task III-11 builds a bz2 package, but we don't want it
     inreplace 'build-toolchain.sh', /^echo Task \[III-11\].*?popd/m, ''
