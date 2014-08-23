@@ -8,6 +8,11 @@ class GccArmEmbedded < Formula
 
   onoe 'Must build with --env=std' unless build.include?('env=std')
 
+  bottle do
+    root_url 'https://github.com/bfoz/homebrew-embedded/releases/download/v0.1'
+    sha1 "c12788d17d517a08508bc5eb480699d9a4810ee6" => :mavericks
+  end
+
   depends_on 'cloog018'
   depends_on 'expat'    # Want 2.0.1, but core has 2.1.0
   depends_on 'libelf'
